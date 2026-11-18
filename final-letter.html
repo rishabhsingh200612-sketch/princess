@@ -219,7 +219,8 @@ main{position:relative;z-index:2;max-width:1180px;margin:0 auto;padding:clamp(70
   /* ---- Polaroids: fade in on scroll, with graceful placeholders ---- */
   var heartSvg='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z" fill="#d6489a"/></svg>';
   function placeholder(img){
-    var ph=img.parentNode; ph.classList.add('missing');
+    var ph=img.parentNode; if(!ph||ph.classList.contains('missing'))return;
+    ph.classList.add('missing');
     var name=(img.getAttribute('src')||'').split('/').pop();
     ph.innerHTML=heartSvg+'<span>'+name+'</span>';
   }
