@@ -290,16 +290,16 @@ body:not(.ready) main>*{animation-play-state:paused}
      date  : optional, e.g. '14 February 2026' (leave '' to hide it)
      r / tr: tilt of the polaroid / tape      tape: '', 'lav' or 'mag'      stk: sticker emoji */
   const PHOTOS = [
-    {src:'assets/photo1.jpg', title:'Your Smile',          cap:'Your smile is my favourite sight \u2665', date:'', r:-3.5, tr:-5, tape:'',    stk:'\uD83C\uDF38'},
-    {src:'assets/photo2.jpg', title:'A Little Moment',     cap:'A little moment I never want to forget.',  date:'', r: 2.6, tr: 4, tape:'lav', stk:'\u2728'},
-    {src:'assets/photo3.jpg', title:'Special, Always',     cap:'Every memory with you feels special.',     date:'', r:-1.6, tr:-3, tape:'mag', stk:'\uD83C\uDF80'},
-    {src:'assets/photo4.jpg', title:'Ordinary Magic',      cap:'You make ordinary days magical.',          date:'', r: 3.0, tr: 5, tape:'lav', stk:'\uD83E\uDD8B'},
-    {src:'assets/photo5.jpg', title:'My Favourite Person', cap:'My favourite person, always.',             date:'', r:-2.7, tr:-4, tape:'',    stk:'\uD83C\uDF53'},
-    {src:'assets/photo6.jpg', title:'Still Writing Us',    cap:'More memories, more love, more us.',       date:'', r: 1.8, tr: 3, tape:'mag', stk:'\uD83D\uDC8C'}
+    {src:'assets/photo1.jpeg', title:'Your Smile',          cap:'Your smile is my favourite sight \u2665', date:'', r:-3.5, tr:-5, tape:'',    stk:'\uD83C\uDF38'},
+    {src:'assets/photo2.jpeg', title:'A Little Moment',     cap:'A little moment I never want to forget.',  date:'', r: 2.6, tr: 4, tape:'lav', stk:'\u2728'},
+    {src:'assets/photo3.jpeg', title:'Special, Always',     cap:'Every memory with you feels special.',     date:'', r:-1.6, tr:-3, tape:'mag', stk:'\uD83C\uDF80'},
+    {src:'assets/photo4.jpeg', title:'Ordinary Magic',      cap:'You make ordinary days magical.',          date:'', r: 3.0, tr: 5, tape:'lav', stk:'\uD83E\uDD8B'},
+    {src:'assets/photo5.jpeg', title:'My Favourite Person', cap:'My favourite person, always.',             date:'', r:-2.7, tr:-4, tape:'',    stk:'\uD83C\uDF53'},
+    {src:'assets/photo6.jpeg', title:'Still Writing Us',    cap:'More memories, more love, more us.',       date:'', r: 1.8, tr: 3, tape:'mag', stk:'\uD83D\uDC8C'}
   ];
 
   /* ---------- image loading: tries .jpeg/.png/.webp/.JPG too, then falls back to a pretty placeholder ---------- */
-  const EXTS = ['jpeg','png','webp','JPG'];
+  const EXTS = ['jpg','png','webp','JPG','jpeg'];
   function candidates(src){
     const m = src.match(/^(.*)\.(\w+)$/); if (!m) return [src];
     return [src].concat(EXTS.map(e => m[1] + '.' + e).filter(s => s !== src));
@@ -499,6 +499,53 @@ body:not(.ready) main>*{animation-play-state:paused}
     try { await bgm.play(); music.classList.add('on'); music.setAttribute('aria-pressed','true'); music.setAttribute('aria-label','Pause music'); }
     catch(e){ music.title = 'Add assets/music.mp3 to enable music'; }
   });
+})();
+</script>
+<script>
+/* ===== Shared music: Enter dabte hi shuru, har page par wahin se aage chalta hai ===== */
+(function(){
+  var a=document.querySelector('audio'), b=document.getElementById('music');
+  if(!a) return;
+  var K='mannatMusic', T='mannatMusicTime', leaving=false;
+  function get(k){ try{ return sessionStorage.getItem(k); }catch(e){ return null; } }
+  function set(k,v){ try{ sessionStorage.setItem(k,v); }catch(e){} }
+  function ui(on){
+    if(!b) return;
+    b.classList.toggle('on',on);
+    b.setAttribute('aria-pressed',on?'true':'false');
+    b.setAttribute('aria-label',on?'Pause music':'Play music');
+  }
+  var t0=parseFloat(get(T)); 
+  if(t0>0){ a.addEventListener('loadedmetadata',function(){ try{ if(t0<a.duration) a.currentTime=t0; }catch(e){} t0=0; },{once:true}); }
+  function start(){
+    if(!a.paused) return Promise.resolve();
+    a.volume=.5;
+    try{
+      var p=a.play();
+      if(p&&p.then) return p.then(function(){ ui(true); });
+      ui(true); return Promise.resolve();
+    }catch(e){ return Promise.reject(e); }
+  }
+  a.addEventListener('play',function(){ set(K,'1'); ui(true); });
+  a.addEventListener('pause',function(){ if(!leaving){ set(K,'0'); ui(false); } });
+  function save(){ if(!a.paused) set(T,String(a.currentTime)); }
+  setInterval(save,1000);
+  addEventListener('pagehide',function(){ leaving=true; save(); });
+  function resume(){
+    leaving=false;
+    if(get(K)==='1' && a.paused){
+      start().catch(function(){
+        /* browser ne block kiya: pehle tap/key par shuru kar do */
+        var go=function(){ removeEventListener('pointerdown',go); removeEventListener('keydown',go); removeEventListener('touchend',go); if(get(K)==='1') start().catch(function(){}); };
+        addEventListener('pointerdown',go); addEventListener('keydown',go); addEventListener('touchend',go);
+      });
+    }
+  }
+  resume();
+  addEventListener('pageshow',function(e){ if(e.persisted) resume(); });
+  /* Welcome page: "Enter My Heart" tap = pehla user gesture, music yahin se start */
+  var enter=document.getElementById('enter');
+  if(enter){ enter.addEventListener('click',function(){ if(get(K)!=='0'){ set(K,'1'); start().catch(function(){}); } }); }
 })();
 </script>
 </body>
