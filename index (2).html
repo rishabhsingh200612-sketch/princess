@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A Little World For Mannat</title>
+<meta name="theme-color" content="#f6d5e6">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Jost:wght@300;400&family=Caveat:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blush:#f9d6e4; --blush-deep:#f3b6d1; --lavender:#d9c8f5; --purple:#b69cea;
+  --cream:#fff8f3; --magenta:#d6489a; --ink:#5a2f57; --ink-soft:#8a5c86;
+  --serif:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --sans:'Jost','Helvetica Neue',Arial,sans-serif;
+  --hand:'Caveat','Segoe Script','Bradley Hand',cursive;
+  --ease:cubic-bezier(.22,.8,.24,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--sans);color:var(--ink);overflow:hidden;
+  background:linear-gradient(120deg,#fde0ec,#f7cfe3,#e6d3f7,#cdbdf2,#f6d0e6,#fde0ec);
+  background-size:400% 400%;animation:drift 26s ease-in-out infinite;
+  -webkit-font-smoothing:antialiased;
+}
+@keyframes drift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+
+/* ---------- ambient layers ---------- */
+.orb{position:fixed;border-radius:50%;filter:blur(70px);pointer-events:none;opacity:.55;will-change:transform}
+.orb.a{width:46vmax;height:46vmax;left:-14vmax;top:-12vmax;background:radial-gradient(circle,#ffc2dc,transparent 70%);animation:float1 22s ease-in-out infinite}
+.orb.b{width:40vmax;height:40vmax;right:-12vmax;bottom:-10vmax;background:radial-gradient(circle,#c9b3f6,transparent 70%);animation:float2 28s ease-in-out infinite}
+.orb.c{width:26vmax;height:26vmax;right:12%;top:8%;background:radial-gradient(circle,#ffe6f1,transparent 70%);opacity:.6;animation:float1 19s ease-in-out infinite reverse}
+.orb.d{width:22vmax;height:22vmax;left:8%;bottom:6%;background:radial-gradient(circle,#e7a3d1,transparent 70%);opacity:.35;animation:float2 24s ease-in-out infinite reverse}
+@keyframes float1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6vmax,4vmax) scale(1.12)}}
+@keyframes float2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-5vmax,-6vmax) scale(1.1)}}
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+.grain{position:fixed;inset:0;pointer-events:none;z-index:2;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* ---------- screens (reusable section pattern) ---------- */
+.screen{
+  position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;
+  padding:max(24px,env(safe-area-inset-top)) 20px max(24px,env(safe-area-inset-bottom));
+  overflow-y:auto;transition:opacity 1.1s var(--ease),transform 1.1s var(--ease),filter 1.1s var(--ease);
+}
+.screen:not(.is-active){opacity:0;pointer-events:none;visibility:hidden;transition:opacity 1.1s var(--ease),transform 1.1s var(--ease),filter 1.1s var(--ease),visibility 0s 1.1s}
+#screen-welcome.is-leaving{opacity:0;transform:scale(1.06);filter:blur(12px);pointer-events:none}
+#screen-letter:not(.is-active),#screen-3:not(.is-active){transform:scale(.96);filter:blur(10px)}
+#screen-letter.is-leaving,#screen-3.is-leaving{opacity:0;transform:scale(1.06);filter:blur(12px);pointer-events:none}
+
+.card{
+  position:relative;width:min(640px,100%);margin:auto;text-align:center;
+  padding:clamp(36px,7vw,68px) clamp(24px,6vw,64px) clamp(30px,5vw,48px);
+  border-radius:38px;
+  background:linear-gradient(145deg,rgba(255,255,255,.52),rgba(255,255,255,.2));
+  border:1px solid rgba(255,255,255,.7);
+  box-shadow:0 30px 80px -20px rgba(168,84,150,.35),0 8px 24px -8px rgba(150,110,210,.25),inset 0 1px 0 rgba(255,255,255,.9);
+  -webkit-backdrop-filter:blur(22px) saturate(140%);backdrop-filter:blur(22px) saturate(140%);
+  animation:cardIn 1.8s var(--ease) both;
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(26px) scale(.97)}to{opacity:1;transform:none}}
+.card::before{ /* soft halo */
+  content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;pointer-events:none;
+  background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(214,72,154,.25),rgba(182,156,234,.5));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
+}
+.eyebrow{
+  font-family:var(--hand);font-size:clamp(1.25rem,3.4vw,1.5rem);color:var(--magenta);
+  opacity:.9;margin-bottom:clamp(14px,3vw,22px);animation:fadeUp 1.4s .5s var(--ease) both;
+}
+h1{
+  font-family:var(--serif);font-weight:400;line-height:1.04;letter-spacing:-.01em;
+  font-size:clamp(2.5rem,8.4vw,4.6rem);color:var(--ink);text-wrap:balance;
+  animation:fadeUp 1.5s .75s var(--ease) both;
+}
+h1 em{
+  font-style:italic;font-weight:300;display:inline-block;
+  background:linear-gradient(100deg,#d6489a,#a86fe0 60%,#d6489a);background-size:200% 100%;
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  animation:shine 7s linear infinite;
+}
+@keyframes shine{to{background-position:-200% 0}}
+.sub{
+  margin-top:clamp(18px,3.5vw,26px);font-family:var(--serif);font-style:italic;font-weight:400;
+  font-size:clamp(1.15rem,3.4vw,1.5rem);color:var(--ink-soft);animation:fadeUp 1.5s 1s var(--ease) both;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+/* ---------- button ---------- */
+.cta-wrap{position:relative;display:inline-block;margin-top:clamp(28px,5vw,40px);animation:fadeUp 1.5s 1.25s var(--ease) both}
+.cta{
+  position:relative;overflow:hidden;cursor:pointer;border:0;
+  font-family:var(--sans);font-weight:400;letter-spacing:.08em;font-size:1.02rem;color:#fff;
+  padding:18px 40px;border-radius:999px;
+  background:linear-gradient(120deg,#e0569f,#c63f96 50%,#a65fe0);
+  box-shadow:0 10px 30px -6px rgba(214,72,154,.6),0 0 0 6px rgba(255,255,255,.28),inset 0 1px 0 rgba(255,255,255,.5);
+  transition:transform .5s var(--ease),box-shadow .5s var(--ease);
+  animation:breathe 3.6s ease-in-out infinite;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+}
+.cta::after{ /* shimmer sweep */
+  content:"";position:absolute;top:0;left:-70%;width:50%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);transition:left .9s var(--ease);
+}
+.cta:hover,.cta:focus-visible{transform:translateY(-3px) scale(1.04);
+  box-shadow:0 18px 46px -6px rgba(214,72,154,.75),0 0 0 8px rgba(255,255,255,.4),0 0 60px 8px rgba(230,120,190,.45),inset 0 1px 0 rgba(255,255,255,.6)}
+.cta:hover::after,.cta:focus-visible::after{left:130%}
+.cta:active{transform:scale(.97)}
+.cta:focus-visible{outline:2px solid #fff;outline-offset:6px}
+.cta .heart{display:inline-block;margin-left:6px;animation:beat 1.6s ease-in-out infinite}
+@keyframes breathe{0%,100%{filter:brightness(1)}50%{filter:brightness(1.08)}}
+@keyframes beat{0%,100%{transform:scale(1)}15%{transform:scale(1.28)}30%{transform:scale(1)}45%{transform:scale(1.18)}}
+.ring{position:absolute;left:50%;top:50%;width:20px;height:20px;margin:-10px;border-radius:50%;
+  border:2px solid rgba(214,72,154,.6);pointer-events:none;animation:ring 1.2s var(--ease) forwards}
+@keyframes ring{to{transform:scale(18);opacity:0}}
+
+.caption{
+  margin-top:clamp(22px,4vw,30px);font-family:var(--hand);font-size:clamp(1.35rem,3.6vw,1.65rem);
+  color:var(--magenta);transform:rotate(-2deg);opacity:.85;animation:fadeUp 1.5s 1.5s var(--ease) both;
+}
+.caption::before,.caption::after{content:"\2726";font-size:.7em;margin:0 .5em;opacity:.6;color:var(--purple)}
+
+/* ---------- music toggle ---------- */
+.music{
+  position:fixed;z-index:20;right:max(18px,env(safe-area-inset-right));top:max(18px,env(safe-area-inset-top));
+  width:46px;height:46px;border-radius:50%;display:grid;place-items:center;cursor:pointer;color:var(--magenta);
+  background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.8);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  box-shadow:0 8px 24px -8px rgba(168,84,150,.4);transition:transform .4s var(--ease),box-shadow .4s;
+}
+.music:hover{transform:scale(1.08);box-shadow:0 10px 30px -4px rgba(214,72,154,.5)}
+.music:focus-visible{outline:2px solid var(--magenta);outline-offset:3px}
+.music svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.music .waves{opacity:0;transition:opacity .3s}.music .mute{opacity:1;transition:opacity .3s}
+.music.on .waves{opacity:1}.music.on .mute{opacity:0}
+.music.on{animation:beat 2.4s ease-in-out infinite}
+
+/* ---------- cursor (desktop only) ---------- */
+.cursor-glow{position:fixed;left:0;top:0;width:260px;height:260px;margin:-130px;border-radius:50%;z-index:3;pointer-events:none;
+  background:radial-gradient(circle,rgba(255,255,255,.55),rgba(240,150,200,.18) 40%,transparent 70%);
+  mix-blend-mode:soft-light;opacity:0;transition:opacity .6s;will-change:transform}
+.cursor-dot{position:fixed;left:0;top:0;width:10px;height:10px;margin:-5px;border-radius:50%;z-index:30;pointer-events:none;
+  background:#d6489a;box-shadow:0 0 14px 4px rgba(214,72,154,.5);opacity:0;transition:opacity .4s,width .3s,height .3s,margin .3s;will-change:transform}
+.cursor-dot.big{width:26px;height:26px;margin:-13px;background:rgba(214,72,154,.35)}
+@media (hover:hover) and (pointer:fine){
+  body.has-cursor,body.has-cursor .cta{cursor:none}
+  body.has-cursor .cursor-glow,body.has-cursor .cursor-dot{opacity:1}
+}
+@media (hover:none),(pointer:coarse){.cursor-glow,.cursor-dot{display:none}}
+
+/* ---------- next screen placeholder ---------- */
+.next-title{font-family:var(--serif);font-weight:400;font-size:clamp(2rem,6.5vw,3.2rem);line-height:1.1}
+.next-note{margin-top:16px;font-family:var(--serif);font-style:italic;font-size:1.25rem;color:var(--ink-soft)}
+.back{margin-top:28px;background:none;border:0;cursor:pointer;font-family:var(--hand);font-size:1.4rem;color:var(--magenta);text-decoration:underline;text-underline-offset:5px}
+
+
+/* =====================================================
+   SCREEN 2 : The Secret Letter
+   ===================================================== */
+@property --amp{syntax:'<length>';inherits:true;initial-value:5px}
+#fx-top{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:25}
+body.has-cursor .seal{cursor:none}
+
+#screen-letter{--E:min(400px,calc(100vw - 96px),max(42vh,250px));--LH:var(--E);--step:.08s}
+#screen-letter.is-active .l-in{animation:fadeUp 1.5s var(--d,0s) var(--ease) both}
+.letter-card{width:min(680px,100%);padding:clamp(30px,5vw,52px) clamp(18px,5vw,48px) clamp(26px,4vw,40px)}
+.l-eyebrow{font-family:var(--hand);font-size:clamp(1.25rem,3.4vw,1.5rem);color:var(--magenta);opacity:.9;margin-bottom:clamp(10px,2.4vw,16px)}
+.l-title{font-family:var(--serif);font-weight:400;line-height:1.08;letter-spacing:-.01em;font-size:clamp(2rem,6.6vw,3.3rem);color:var(--ink);text-wrap:balance}
+.l-title em{font-style:italic;font-weight:300;display:inline-block;
+  background:linear-gradient(100deg,#d6489a,#a86fe0 60%,#d6489a);background-size:200% 100%;
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shine 7s linear infinite}
+
+/* stage: grows upward so the letter has room to rise */
+.stage{display:flex;justify-content:center;margin-top:clamp(20px,4vw,30px);padding-top:0;
+  transition:padding-top 2.4s cubic-bezier(.45,.05,.2,1) 1.5s}
+.stage.open{padding-top:calc(var(--LH) - var(--E)*.38)}
+
+.env-float{position:relative;width:var(--E);--amp:5px;transition:--amp 1.6s ease;animation:bob 6s ease-in-out infinite}
+.stage.open .env-float{--amp:2px}
+@keyframes bob{0%,100%{transform:translateY(calc(var(--amp)*-1))}50%{transform:translateY(var(--amp))}}
+.env-glow{position:absolute;left:50%;top:50%;width:150%;aspect-ratio:1;transform:translate(-50%,-46%);border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(255,255,255,.75),rgba(246,160,210,.28) 42%,transparent 68%);animation:glowPulse 5s ease-in-out infinite}
+@keyframes glowPulse{0%,100%{opacity:.7;transform:translate(-50%,-46%) scale(.96)}50%{opacity:1;transform:translate(-50%,-46%) scale(1.06)}}
+
+/* envelope */
+.envelope{position:relative;width:var(--E);height:calc(var(--E)*.68);perspective:1400px}
+.env-shadow{position:absolute;left:8%;right:8%;bottom:-16px;height:26px;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(150,60,130,.45),transparent);filter:blur(8px)}
+.env-back{position:absolute;inset:0;z-index:1;
+  background:repeating-linear-gradient(45deg,rgba(255,255,255,.14) 0 2px,transparent 2px 10px),linear-gradient(180deg,#cdb9f3,#b196e8);
+  box-shadow:0 18px 34px -12px rgba(150,60,140,.4)}
+.env-sides,.env-base{position:absolute;inset:0;z-index:3;pointer-events:none}
+.env-sides{filter:drop-shadow(0 0 3px rgba(120,40,110,.22))}
+.env-base{filter:drop-shadow(0 -3px 5px rgba(120,40,110,.3))}
+.env-left,.env-right,.env-bottom{position:absolute;inset:0}
+.env-left{clip-path:polygon(0 0,50% 55%,0 100%);background:linear-gradient(100deg,#f3a6c9,#f9c4dc)}
+.env-right{clip-path:polygon(100% 0,50% 55%,100% 100%);background:linear-gradient(260deg,#f3a6c9,#f9c4dc)}
+.env-bottom{clip-path:polygon(0 100%,50% 52%,100% 100%);background:linear-gradient(0deg,#f4acce,#fcd3e5)}
+
+/* 3D flap */
+.flap{position:absolute;left:0;top:0;width:100%;height:56%;z-index:5;transform-origin:50% 0;transform-style:preserve-3d;
+  transition:transform 1.1s cubic-bezier(.5,0,.2,1) .5s}
+.flap.under{z-index:1}
+.stage.open .flap{transform:rotateX(-180deg)}
+.flap-face{position:absolute;inset:0;clip-path:polygon(0 0,100% 0,50% 100%);backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.flap-out{background:linear-gradient(180deg,#fcc9e0,#efa0c5)}
+.flap-in{transform:rotateY(180deg);
+  background:repeating-linear-gradient(45deg,rgba(255,255,255,.14) 0 2px,transparent 2px 10px),linear-gradient(180deg,#d6c4f6,#b99fec)}
+
+/* letter */
+.letter{position:absolute;left:5%;width:90%;bottom:calc(var(--E)*.06);height:calc(var(--E)*.5);z-index:2;overflow:hidden;border-radius:5px;
+  background:linear-gradient(172deg,#fffdfa,#fff6f9 55%,#fcecf5);
+  box-shadow:0 -6px 18px -8px rgba(150,80,160,.3),0 0 0 1px rgba(214,72,154,.08);
+  transition:transform 2.4s cubic-bezier(.45,.05,.2,1),height 2.4s cubic-bezier(.45,.05,.2,1),box-shadow .9s ease}
+.stage.open .letter{transform:translateY(calc(var(--E)*-.24));height:var(--LH);transition-delay:1.5s,1.5s,0s}
+.letter.front{z-index:4;box-shadow:0 24px 44px -14px rgba(120,50,130,.45),0 0 0 1px rgba(214,72,154,.1),0 0 44px rgba(255,200,230,.75)}
+.letter::before{content:"";position:absolute;inset:9px;border:1px solid rgba(214,72,154,.18);border-radius:3px;pointer-events:none}
+.letter::after{content:"\2665";position:absolute;right:7%;bottom:4%;font-size:calc(var(--E)*.16);line-height:1;color:rgba(214,72,154,.08);pointer-events:none}
+.letter-text{position:relative;text-align:left;font-family:var(--hand);font-weight:500;line-height:1.32;color:#6b3a6a;
+  font-size:max(17px,calc(var(--E)*.054));padding:calc(var(--E)*.075) calc(var(--E)*.085) calc(var(--E)*.1)}
+.letter-text p{margin-bottom:.6em}
+.letter-text .hi{font-size:1.3em;color:var(--magenta);margin-bottom:.4em}
+.w{display:inline-block;opacity:0}
+.writing .w{animation:ink .8s calc(var(--i)*var(--step)) var(--ease) both}
+@keyframes ink{from{opacity:0;transform:translateY(6px) scale(.96);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
+
+/* wax heart seal */
+.seal{position:absolute;left:50%;top:55%;z-index:6;width:calc(var(--E)*.21);aspect-ratio:100/92;padding:0;border:0;background:none;cursor:pointer;
+  transform:translate(-50%,-52%);transition:transform .45s var(--ease);-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+  filter:drop-shadow(0 8px 10px rgba(130,20,90,.4)) drop-shadow(0 0 14px rgba(255,110,190,.6));animation:sealGlow 2.6s ease-in-out infinite}
+.seal:hover{transform:translate(-50%,-52%) scale(1.1)}
+.seal:focus-visible{outline:2px solid #fff;outline-offset:8px;border-radius:50%}
+.seal svg{display:block;width:100%;height:100%;animation:sealBeat 2s ease-in-out infinite}
+.seal-ring{position:absolute;inset:-14%;border-radius:50%;border:2px solid rgba(255,255,255,.8);animation:sealRing 2.4s ease-out infinite;pointer-events:none}
+.seal.pop{pointer-events:none;animation:sealPop .75s var(--ease) forwards}
+.seal.pop .seal-ring{display:none}
+@keyframes sealGlow{0%,100%{filter:drop-shadow(0 8px 10px rgba(130,20,90,.4)) drop-shadow(0 0 10px rgba(255,110,190,.45))}50%{filter:drop-shadow(0 8px 10px rgba(130,20,90,.4)) drop-shadow(0 0 24px rgba(255,120,200,.95))}}
+@keyframes sealBeat{0%,100%{transform:scale(1)}20%{transform:scale(1.08)}40%{transform:scale(1)}60%{transform:scale(1.05)}}
+@keyframes sealRing{0%{transform:scale(.8);opacity:.9}100%{transform:scale(1.7);opacity:0}}
+@keyframes sealPop{
+  0%{transform:translate(-50%,-52%) scale(1) rotate(0);opacity:1}
+  35%{transform:translate(-50%,-62%) scale(1.35) rotate(-8deg);opacity:1}
+  100%{transform:translate(-50%,-44%) scale(0) rotate(14deg);opacity:0}}
+
+/* sparkles around the envelope */
+.sp{position:absolute;z-index:7;pointer-events:none;color:#fff;font-size:var(--s);line-height:1;
+  text-shadow:0 0 8px #ff8cc4,0 0 18px #c9a8f5;animation:twinkle 3.6s var(--d) ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:.15;transform:scale(.5) rotate(0)}50%{opacity:1;transform:scale(1.1) rotate(25deg)}}
+
+/* text below the envelope + continue button share one grid cell */
+.below{display:grid;justify-items:center;align-content:center;margin-top:clamp(22px,4vw,30px)}
+.below>*{grid-area:1/1}
+.below-txt{text-align:center;transition:opacity .6s ease,visibility 0s}
+.below-txt.gone{opacity:0;visibility:hidden;transition:opacity .6s ease,visibility 0s .6s}
+.l-note{display:inline-block;font-family:var(--serif);font-style:italic;font-size:clamp(1.05rem,3.3vw,1.4rem);color:var(--ink);
+  padding:10px 24px;border-radius:999px;background:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.85);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 8px 24px -10px rgba(168,84,150,.35),inset 0 1px 0 rgba(255,255,255,.9)}
+.l-hint{margin-top:12px;font-family:var(--hand);font-size:clamp(1.2rem,3.4vw,1.45rem);color:var(--magenta);opacity:.9}
+.cta-slot{opacity:0;visibility:hidden;transform:translateY(14px)}
+.cta-slot.show{opacity:1;visibility:visible;transform:none;transition:opacity .9s var(--ease),transform .9s var(--ease),visibility 0s}
+@media (prefers-reduced-motion:reduce){
+  #screen-letter{--step:0s}
+  #screen-letter *,#screen-letter *::before,#screen-letter *::after{transition-delay:0s!important;animation-delay:0s!important}
+}
+
+@media (max-width:420px){.cta{padding:17px 30px;font-size:.96rem}.card{border-radius:30px}}
+@media (max-height:560px) and (orientation:landscape){.card{padding:26px 36px}h1{font-size:2.2rem}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  body{animation:none}
+}
+</style>
+</head>
+<body>
+
+<div class="orb a"></div><div class="orb b"></div><div class="orb c"></div><div class="orb d"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+<canvas id="fx-top" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+<div class="cursor-glow" aria-hidden="true"></div><div class="cursor-dot" aria-hidden="true"></div>
+
+<button class="music" id="music" type="button" aria-label="Play music" aria-pressed="false" title="Music">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>
+  </svg>
+</button>
+<audio id="bgm" loop preload="none" src="assets/music.mp3"></audio>
+
+<!-- SCREEN 1 : Welcome -->
+<main class="screen is-active" id="screen-welcome">
+  <section class="card">
+    <p class="eyebrow">A little something made with love</p>
+    <h1>Welcome to my little world, <em>Mannat</em></h1>
+    <p class="sub">I made something special just for you...</p>
+    <div class="cta-wrap">
+      <button class="cta" id="enter" type="button">Enter My Heart <span class="heart" aria-hidden="true">&hearts;</span></button>
+    </div>
+    <p class="caption">Made with love, just for you</p>
+  </section>
+</main>
+
+<!-- SCREEN 2 : The Secret Letter -->
+<section class="screen" id="screen-letter" aria-labelledby="letter-title">
+  <div class="card letter-card">
+    <p class="l-eyebrow l-in" style="--d:.5s">A little secret for you</p>
+    <h2 class="l-title l-in" id="letter-title" style="--d:.7s">One little letter,<br><em>a thousand feelings...</em></h2>
+
+    <div class="stage" id="stage">
+      <div class="l-in" style="--d:1s">
+        <div class="env-float">
+          <div class="env-glow" aria-hidden="true"></div>
+          <div class="envelope" id="envelope">
+            <div class="env-shadow" aria-hidden="true"></div>
+            <div class="env-back"></div>
+            <div class="letter" id="letter" aria-hidden="true"><div class="letter-text" id="letterText"></div></div>
+            <div class="env-sides" aria-hidden="true"><div class="env-left"></div><div class="env-right"></div></div>
+            <div class="env-base" aria-hidden="true"><div class="env-bottom"></div></div>
+            <div class="flap" id="flap" aria-hidden="true"><div class="flap-face flap-out"></div><div class="flap-face flap-in"></div></div>
+            <button class="seal" id="seal" type="button" aria-label="Tap the heart seal to open your letter">
+              <span class="seal-ring" aria-hidden="true"></span>
+              <svg viewBox="0 0 100 92" aria-hidden="true">
+                <defs>
+                  <radialGradient id="wax" cx="38%" cy="30%" r="80%"><stop offset="0" stop-color="#ff90c7"/><stop offset=".5" stop-color="#e0449a"/><stop offset="1" stop-color="#9c2a7e"/></radialGradient>
+                  <linearGradient id="waxHi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".8"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+                </defs>
+                <path d="M50 87C19 64 4 46 4 29 4 14 16 5 29 5c9 0 17 5 21 13 4-8 12-13 21-13 13 0 25 9 25 24 0 17-15 35-46 58z" fill="url(#wax)"/>
+                <path d="M50 87C19 64 4 46 4 29 4 14 16 5 29 5c9 0 17 5 21 13 4-8 12-13 21-13 13 0 25 9 25 24 0 17-15 35-46 58z" transform="translate(14 13) scale(.72)" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+                <ellipse cx="29" cy="21" rx="14" ry="7" fill="url(#waxHi)" transform="rotate(-25 29 21)"/>
+              </svg>
+            </button>
+          </div>
+          <span class="sp" style="left:-9%;top:-4%;--s:20px;--d:0s" aria-hidden="true">&#10022;</span>
+          <span class="sp" style="left:96%;top:2%;--s:15px;--d:.8s" aria-hidden="true">&#10022;</span>
+          <span class="sp" style="left:12%;top:-22%;--s:13px;--d:1.4s" aria-hidden="true">&#10022;</span>
+          <span class="sp" style="left:84%;top:-18%;--s:22px;--d:2.1s" aria-hidden="true">&#10022;</span>
+          <span class="sp" style="left:-6%;top:66%;--s:14px;--d:2.6s" aria-hidden="true">&#10022;</span>
+          <span class="sp" style="left:101%;top:62%;--s:18px;--d:1.1s" aria-hidden="true">&#10022;</span>
+          <span class="sp" style="left:46%;top:104%;--s:12px;--d:1.9s" aria-hidden="true">&#10022;</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="below">
+      <div class="below-txt" id="belowTxt">
+        <p class="l-note l-in" style="--d:1.3s">Someone has written something for you &hearts;</p>
+        <p class="l-hint l-in" style="--d:1.5s">Tap the little heart to open your letter</p>
+      </div>
+      <div class="cta-slot" id="ctaSlot"><button class="cta" id="continue" type="button">Continue my surprise &rarr;</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- SCREEN 3 : placeholder, replace with your next screen -->
+<section class="screen" id="screen-3" aria-live="polite">
+  <div class="card">
+    <h2 class="next-title">Screen 3 begins here</h2>
+    <p class="next-note">Your next surprise goes in this spot.</p>
+    <button class="back" id="back" type="button">go back to the letter</button>
+  </div>
+</section>
+
+<script>
+(() => {
+  'use strict';
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const canvas = document.getElementById('fx'), ctx = canvas.getContext('2d');
+  const canvas2 = document.getElementById('fx-top'), ctx2 = canvas2.getContext('2d'); // top layer: sparkles above cards
+  let W, H, DPR;
+  const COLORS = ['#ff9ec7','#f77fb5','#d6489a','#c9a8f5','#ffd1e3','#ffffff'];
+  const rand = (a,b) => a + Math.random()*(b-a);
+  const pick = a => a[Math.floor(Math.random()*a.length)];
+
+  function resize(){
+    DPR = Math.min(window.devicePixelRatio||1, 2);
+    W = innerWidth; H = innerHeight;
+    canvas.width = W*DPR; canvas.height = H*DPR;
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    canvas2.width = W*DPR; canvas2.height = H*DPR;
+    ctx2.setTransform(DPR,0,0,DPR,0,0);
+  }
+  addEventListener('resize', resize); resize();
+
+  function heart(x,y,s,rot,alpha,color,glow,c=ctx){
+    c.save(); c.translate(x,y); c.rotate(rot); c.globalAlpha = alpha;
+    c.fillStyle = color; if (glow){ c.shadowColor = color; c.shadowBlur = glow; }
+    c.beginPath();
+    c.moveTo(0,s*.35);
+    c.bezierCurveTo(-s*.95,-s*.3,-s*.5,-s*.98,0,-s*.42);
+    c.bezierCurveTo(s*.5,-s*.98,s*.95,-s*.3,0,s*.35);
+    c.fill(); c.restore();
+  }
+
+  /* ambient hearts + glow particles */
+  const heartCount = Math.round(Math.min(26, Math.max(12, W/55)));
+  const hearts = Array.from({length:heartCount}, () => newHeart(true));
+  function newHeart(init){
+    return {x:rand(0,W), y: init ? rand(0,H) : H+30, s:rand(6,17), v:rand(.18,.5),
+      sway:rand(.5,1.4), ph:rand(0,6.28), rot:rand(-.4,.4), a:rand(.25,.6), c:pick(COLORS.slice(0,5))};
+  }
+  const motes = Array.from({length: Math.round(Math.min(60, W/22))}, () => ({
+    x:rand(0,W), y:rand(0,H), r:rand(.8,2.6), vx:rand(-.12,.12), vy:rand(-.28,-.06), ph:rand(0,6.28), sp:rand(.01,.03)
+  }));
+
+  /* interactive bits */
+  const sparks = [], burst = [];
+  const mouse = {x:W/2, y:H/2, tx:W/2, ty:H/2, active:false};
+
+  function spawnBurst(cx, cy, k = 1, top = false){
+    const n = Math.round(46*k);
+    for (let i=0;i<n;i++){
+      const ang = rand(0,Math.PI*2), sp = rand(2.5,9);
+      burst.push({x:cx,y:cy,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp-2.5,s:rand(7,20),rot:rand(-1,1),
+        vr:rand(-.08,.08),life:1,decay:rand(.007,.014),c:pick(COLORS),g:rand(.05,.1),type:'h',top});
+    }
+    for (let i=0;i<Math.round(38*k);i++){
+      const ang = rand(0,Math.PI*2), sp = rand(1,6);
+      burst.push({x:cx,y:cy,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,s:rand(1.5,3.5),life:1,decay:rand(.012,.025),c:'#fff',g:.02,type:'d',top});
+    }
+  }
+
+  let last = performance.now(), t = 0;
+  function frame(now){
+    const dt = Math.min(2.5,(now-last)/16.67); last = now; t += dt;
+    ctx.clearRect(0,0,W,H); ctx2.clearRect(0,0,W,H);
+
+    // glow motes
+    for (const m of motes){
+      m.ph += m.sp*dt; m.x += (m.vx + Math.sin(m.ph)*.15)*dt; m.y += m.vy*dt;
+      if (m.y < -10){ m.y = H+10; m.x = rand(0,W); }
+      if (m.x < -10) m.x = W+10; if (m.x > W+10) m.x = -10;
+      const tw = .45 + .45*Math.sin(m.ph*3);
+      ctx.globalAlpha = tw; ctx.fillStyle = '#fff'; ctx.shadowColor = '#ffd6ec'; ctx.shadowBlur = 12;
+      ctx.beginPath(); ctx.arc(m.x,m.y,m.r,0,6.283); ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+
+    // floating hearts
+    for (let i=0;i<hearts.length;i++){
+      const h = hearts[i];
+      h.y -= h.v*dt; h.ph += .008*dt;
+      const px = h.x + Math.sin(h.ph*h.sway*4)*22 + (mouse.active ? (mouse.x-W/2)*-.01*h.s/10 : 0);
+      const fade = Math.min(1, h.y/120, (H-h.y+40)/120);
+      heart(px, h.y, h.s, h.rot + Math.sin(h.ph*3)*.15, h.a*Math.max(0,Math.min(1,fade)), h.c, 10);
+      if (h.y < -30) hearts[i] = newHeart(false);
+    }
+
+    // cursor trail sparks
+    for (let i=sparks.length-1;i>=0;i--){
+      const s = sparks[i]; s.life -= .02*dt; s.x += s.vx*dt; s.y += s.vy*dt; s.vy -= .004*dt;
+      if (s.life <= 0){ sparks.splice(i,1); continue; }
+      heart(s.x,s.y,s.s*s.life,s.rot,s.life*.8,s.c,8);
+    }
+
+    // click burst
+    for (let i=burst.length-1;i>=0;i--){
+      const b = burst[i];
+      b.life -= b.decay*dt; b.vy += b.g*dt; b.vx *= .985; b.x += b.vx*dt; b.y += b.vy*dt;
+      if (b.life <= 0){ burst.splice(i,1); continue; }
+      const cv = b.top ? ctx2 : ctx;
+      if (b.type==='h'){ b.rot += b.vr*dt; heart(b.x,b.y,b.s*(.5+b.life*.5),b.rot,Math.min(1,b.life*1.4),b.c,14,cv); }
+      else { cv.globalAlpha = b.life; cv.fillStyle='#fff'; cv.shadowColor='#ff9ec7'; cv.shadowBlur=10;
+             cv.beginPath(); cv.arc(b.x,b.y,b.s,0,6.283); cv.fill(); cv.shadowBlur=0; }
+    }
+    ctx.globalAlpha = 1; ctx2.globalAlpha = 1;
+
+    // smooth cursor follow
+    if (document.body.classList.contains('has-cursor')){
+      mouse.x += (mouse.tx-mouse.x)*.14*dt; mouse.y += (mouse.ty-mouse.y)*.14*dt;
+      glow.style.transform = `translate(${mouse.x}px,${mouse.y}px)`;
+      dot.style.transform = `translate(${mouse.tx}px,${mouse.ty}px)`;
+    }
+    if (!reduce) requestAnimationFrame(frame);
+  }
+
+  /* cursor (desktop with fine pointer only) */
+  const glow = document.querySelector('.cursor-glow'), dot = document.querySelector('.cursor-dot');
+  const finePointer = matchMedia('(hover:hover) and (pointer:fine)').matches;
+  let lastSpark = 0;
+  if (finePointer){
+    document.body.classList.add('has-cursor');
+    addEventListener('pointermove', e => {
+      if (e.pointerType !== 'mouse') return;
+      mouse.tx = e.clientX; mouse.ty = e.clientY; mouse.active = true;
+      const n = performance.now();
+      if (n - lastSpark > 70 && !reduce){
+        lastSpark = n;
+        sparks.push({x:e.clientX,y:e.clientY,vx:rand(-.4,.4),vy:rand(-.8,-.2),s:rand(4,8),rot:rand(-.5,.5),life:1,c:pick(COLORS)});
+      }
+    });
+    document.querySelectorAll('button').forEach(b => {
+      b.addEventListener('pointerenter', () => dot.classList.add('big'));
+      b.addEventListener('pointerleave', () => dot.classList.remove('big'));
+    });
+  }
+
+  /* screen transitions: reusable for any number of sections */
+  const welcome = document.getElementById('screen-welcome');
+  const next = document.getElementById('screen-letter'); // Screen 2
+  const btn = document.getElementById('enter');
+  let busy = false;
+
+  btn.addEventListener('click', () => {
+    if (busy) return; busy = true;
+    const r = btn.getBoundingClientRect();
+    const cx = r.left + r.width/2, cy = r.top + r.height/2;
+    const ring = document.createElement('span'); ring.className = 'ring';
+    btn.parentElement.appendChild(ring); setTimeout(() => ring.remove(), 1300);
+    spawnBurst(cx, cy);
+    if (reduce) requestAnimationFrame(frame);
+    setTimeout(() => spawnBurst(cx, cy), 220);
+    setTimeout(() => goTo(welcome, next), 1250);
+  });
+
+  function goTo(from, to){
+    from.classList.add('is-leaving'); from.classList.remove('is-active');
+    to.classList.remove('is-leaving'); to.classList.add('is-active');
+    setTimeout(() => from.classList.remove('is-leaving'), 1200);
+    document.dispatchEvent(new CustomEvent('world:navigate', {detail:{from:from.id, to:to.id}}));
+    /* Multi-page option: window.location.href = 'story.html'; */
+  }
+
+  /* ================= SCREEN 2 : The Secret Letter ================= */
+  const screen3 = document.getElementById('screen-3');
+  const stage = document.getElementById('stage'), seal = document.getElementById('seal');
+  const flap = document.getElementById('flap'), letterEl = document.getElementById('letter');
+  const letterText = document.getElementById('letterText'), belowTxt = document.getElementById('belowTxt');
+  const ctaSlot = document.getElementById('ctaSlot'), contBtn = document.getElementById('continue');
+  const T = reduce ? .1 : 1;           // shortens JS timers for reduced motion
+  let opened = false, leaving = false, words = 0;
+
+  const MESSAGE = [
+    {cls:'hi', t:'Hey Mannat, \u2665'},
+    {t:'I wanted to make something a little different for you.'},
+    {t:'So I made this tiny world filled with little surprises, memories and love.'},
+    {t:'Every page is made especially for you.'},
+    {t:'I hope it makes you smile.'}
+  ];
+  MESSAGE.forEach(line => {
+    const p = document.createElement('p'); if (line.cls) p.className = line.cls;
+    const parts = line.t.split(' ');
+    parts.forEach((w,i) => {
+      const sp = document.createElement('span'); sp.className = 'w';
+      sp.style.setProperty('--i', words++); sp.textContent = w; p.appendChild(sp);
+      if (i < parts.length-1) p.appendChild(document.createTextNode(' '));
+    });
+    letterText.appendChild(p);
+  });
+
+  // letter grows to fit its text on any screen size
+  function fitLetter(){
+    const E = document.getElementById('envelope').offsetWidth;
+    stage.style.setProperty('--LH', Math.max(E, letterText.offsetHeight + 6) + 'px');
+  }
+  addEventListener('resize', () => { if (opened) fitLetter(); });
+
+  seal.addEventListener('click', () => {
+    if (opened) return; opened = true;
+    fitLetter();
+    const r = seal.getBoundingClientRect();
+    if (!reduce) spawnBurst(r.left + r.width/2, r.top + r.height/2, 1, true);   // 1. heart sparkles
+    seal.classList.add('pop');                                                   // 2. seal disappears
+    setTimeout(() => { seal.style.display = 'none'; }, 800);
+    belowTxt.classList.add('gone');
+    stage.classList.add('open');                                                 // 3. flap opens, 4. letter slides up (CSS)
+    setTimeout(() => flap.classList.add('under'), 1050*T);                       // flap swings behind the letter
+    setTimeout(() => {                                                           // letter lifts in front of the envelope
+      letterEl.classList.add('front'); letterEl.removeAttribute('aria-hidden');
+      const lr = letterEl.getBoundingClientRect();
+      if (!reduce) spawnBurst(lr.left + lr.width/2, lr.top + lr.height*.4, .55, true);
+    }, 3400*T);
+    setTimeout(() => letterEl.classList.add('writing'), 3200*T);                 // 5. message is written
+    setTimeout(() => {                                                           // reveal the button
+      ctaSlot.classList.add('show');
+      contBtn.scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block:'nearest'});
+    }, (3200 + words*80 + 900)*T);
+  });
+
+  contBtn.addEventListener('click', () => {
+    if (leaving) return; leaving = true;
+    const r = contBtn.getBoundingClientRect();
+    if (!reduce) spawnBurst(r.left + r.width/2, r.top + r.height/2, .7, true);
+    setTimeout(() => goTo(next, screen3), 700*T);                                // to Screen 3
+  });
+  document.getElementById('back').addEventListener('click', () => { goTo(screen3, next); leaving = false; });
+
+  // keyboard users land on the seal when the letter screen appears
+  document.addEventListener('world:navigate', e => {
+    if (e.detail.to === 'screen-letter' && !opened) setTimeout(() => seal.focus({preventScroll:true}), 1300);
+  });
+
+  /* music toggle: never autoplays; play only on tap */
+  const music = document.getElementById('music'), bgm = document.getElementById('bgm');
+  bgm.volume = .5;
+  music.insertAdjacentHTML('beforeend','<svg viewBox="0 0 24 24" style="position:absolute" aria-hidden="true"><path class="waves" d="M20 8c1.2 1.2 1.2 6.8 0 8" /></svg>');
+  music.addEventListener('click', async () => {
+    const on = music.classList.contains('on');
+    if (on){ bgm.pause(); music.classList.remove('on'); music.setAttribute('aria-pressed','false'); music.setAttribute('aria-label','Play music'); return; }
+    try { await bgm.play(); music.classList.add('on'); music.setAttribute('aria-pressed','true'); music.setAttribute('aria-label','Pause music'); }
+    catch(e){ music.title = 'Add assets/music.mp3 to enable music'; }
+  });
+
+  if (reduce){ frame(performance.now()); } else requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
