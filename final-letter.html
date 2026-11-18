@@ -134,8 +134,8 @@ main{position:relative;z-index:2;max-width:1180px;margin:0 auto;padding:clamp(70
 
   <div class="stage">
     <div class="side left">
-      <figure class="pol" style="--r:-5deg;--d:0;--tape:rgba(249,214,228,.9)"><div class="ph"><img src="assets/photo1.jpg" alt="Mannat and me"></div><figcaption>us ♥</figcaption></figure>
-      <figure class="pol" style="--r:4deg;--d:2;--tape:rgba(217,200,245,.9)"><div class="ph"><img src="assets/photo2.jpg" alt="A favourite moment"></div><figcaption>my favourite day</figcaption></figure>
+      <figure class="pol" style="--r:-5deg;--d:0;--tape:rgba(249,214,228,.9)"><div class="ph"><img src="assets/photo1.jpeg" alt="Mannat and me"></div><figcaption>us ♥</figcaption></figure>
+      <figure class="pol" style="--r:4deg;--d:2;--tape:rgba(217,200,245,.9)"><div class="ph"><img src="assets/photo2.jpeg" alt="A favourite moment"></div><figcaption>my favourite day</figcaption></figure>
     </div>
 
     <article class="letter" id="letter" aria-label="A note for Mannat">
@@ -153,8 +153,8 @@ main{position:relative;z-index:2;max-width:1180px;margin:0 auto;padding:clamp(70
     </article>
 
     <div class="side right">
-      <figure class="pol" style="--r:4deg;--d:1;--tape:rgba(217,200,245,.9)"><div class="ph"><img src="assets/photo3.jpg" alt="Us together"></div><figcaption>just us</figcaption></figure>
-      <figure class="pol" style="--r:-4deg;--d:3;--tape:rgba(249,214,228,.9)"><div class="ph"><img src="assets/photo4.jpg" alt="Another memory"></div><figcaption>always ♥</figcaption></figure>
+      <figure class="pol" style="--r:4deg;--d:1;--tape:rgba(217,200,245,.9)"><div class="ph"><img src="assets/photo3.jpeg" alt="Us together"></div><figcaption>just us</figcaption></figure>
+      <figure class="pol" style="--r:-4deg;--d:3;--tape:rgba(249,214,228,.9)"><div class="ph"><img src="assets/photo4.jpeg" alt="Another memory"></div><figcaption>always ♥</figcaption></figure>
     </div>
   </div>
 
@@ -225,8 +225,13 @@ main{position:relative;z-index:2;max-width:1180px;margin:0 auto;padding:clamp(70
     ph.innerHTML=heartSvg+'<span>'+name+'</span>';
   }
   document.querySelectorAll('.pol img').forEach(function(img){
-    img.addEventListener('error',function(){placeholder(img);});
-    if(img.complete&&img.naturalWidth===0)placeholder(img);
+    var alts=['jpg','png','webp','JPG'],ai=0;
+    function next(){
+      if(ai<alts.length){ img.src=(img.getAttribute('src')||'').replace(/\.\w+$/,'.'+alts[ai++]); }
+      else placeholder(img);
+    }
+    img.addEventListener('error',next);
+    if(img.complete&&img.naturalWidth===0)next();
   });
   var pols=document.querySelectorAll('.pol');
   if('IntersectionObserver' in window){
@@ -281,6 +286,53 @@ main{position:relative;z-index:2;max-width:1180px;margin:0 auto;padding:clamp(70
     });
   });
   addEventListener('pageshow',function(e){if(e.persisted){veil.classList.remove('show');veil.classList.add('hide');}});
+})();
+</script>
+<script>
+/* ===== Shared music: Enter dabte hi shuru, har page par wahin se aage chalta hai ===== */
+(function(){
+  var a=document.querySelector('audio'), b=document.getElementById('music');
+  if(!a) return;
+  var K='mannatMusic', T='mannatMusicTime', leaving=false;
+  function get(k){ try{ return sessionStorage.getItem(k); }catch(e){ return null; } }
+  function set(k,v){ try{ sessionStorage.setItem(k,v); }catch(e){} }
+  function ui(on){
+    if(!b) return;
+    b.classList.toggle('on',on);
+    b.setAttribute('aria-pressed',on?'true':'false');
+    b.setAttribute('aria-label',on?'Pause music':'Play music');
+  }
+  var t0=parseFloat(get(T)); 
+  if(t0>0){ a.addEventListener('loadedmetadata',function(){ try{ if(t0<a.duration) a.currentTime=t0; }catch(e){} t0=0; },{once:true}); }
+  function start(){
+    if(!a.paused) return Promise.resolve();
+    a.volume=.5;
+    try{
+      var p=a.play();
+      if(p&&p.then) return p.then(function(){ ui(true); });
+      ui(true); return Promise.resolve();
+    }catch(e){ return Promise.reject(e); }
+  }
+  a.addEventListener('play',function(){ set(K,'1'); ui(true); });
+  a.addEventListener('pause',function(){ if(!leaving){ set(K,'0'); ui(false); } });
+  function save(){ if(!a.paused) set(T,String(a.currentTime)); }
+  setInterval(save,1000);
+  addEventListener('pagehide',function(){ leaving=true; save(); });
+  function resume(){
+    leaving=false;
+    if(get(K)==='1' && a.paused){
+      start().catch(function(){
+        /* browser ne block kiya: pehle tap/key par shuru kar do */
+        var go=function(){ removeEventListener('pointerdown',go); removeEventListener('keydown',go); removeEventListener('touchend',go); if(get(K)==='1') start().catch(function(){}); };
+        addEventListener('pointerdown',go); addEventListener('keydown',go); addEventListener('touchend',go);
+      });
+    }
+  }
+  resume();
+  addEventListener('pageshow',function(e){ if(e.persisted) resume(); });
+  /* Welcome page: "Enter My Heart" tap = pehla user gesture, music yahin se start */
+  var enter=document.getElementById('enter');
+  if(enter){ enter.addEventListener('click',function(){ if(get(K)!=='0'){ set(K,'1'); start().catch(function(){}); } }); }
 })();
 </script>
 </body>
