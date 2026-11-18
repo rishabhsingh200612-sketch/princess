@@ -160,6 +160,8 @@ h1 em{
   body{animation:none}
 }
 </style>
+<style>/* music button hata diya: song kisi bhi click par chalta hai */
+#music,.music{display:none!important}</style>
 </head>
 <body>
 
@@ -373,50 +375,28 @@ h1 em{
 })();
 </script>
 <script>
-/* ===== Shared music: Enter dabte hi shuru, har page par wahin se aage chalta hai ===== */
+/* ===== Music: kisi bhi click/tap/key par shuru, har page par wahin se aage chalta hai ===== */
 (function(){
-  var a=document.querySelector('audio'), b=document.getElementById('music');
+  var a=document.querySelector('audio');
   if(!a) return;
-  var K='mannatMusic', T='mannatMusicTime', leaving=false;
+  var T='mannatMusicTime', EV=['pointerdown','mousedown','click','touchend','keydown'], armed=false;
   function get(k){ try{ return sessionStorage.getItem(k); }catch(e){ return null; } }
   function set(k,v){ try{ sessionStorage.setItem(k,v); }catch(e){} }
-  function ui(on){
-    if(!b) return;
-    b.classList.toggle('on',on);
-    b.setAttribute('aria-pressed',on?'true':'false');
-    b.setAttribute('aria-label',on?'Pause music':'Play music');
-  }
-  var t0=parseFloat(get(T)); 
+  var t0=parseFloat(get(T));
   if(t0>0){ a.addEventListener('loadedmetadata',function(){ try{ if(t0<a.duration) a.currentTime=t0; }catch(e){} t0=0; },{once:true}); }
-  function start(){
-    if(!a.paused) return Promise.resolve();
+  function off(){ if(!armed) return; armed=false; EV.forEach(function(ev){ removeEventListener(ev,tryPlay,true); }); }
+  function arm(){ if(armed) return; armed=true; EV.forEach(function(ev){ addEventListener(ev,tryPlay,true); }); }
+  function tryPlay(){
+    if(!a.paused){ off(); return; }
     a.volume=.5;
-    try{
-      var p=a.play();
-      if(p&&p.then) return p.then(function(){ ui(true); });
-      ui(true); return Promise.resolve();
-    }catch(e){ return Promise.reject(e); }
+    var p; try{ p=a.play(); }catch(e){ return; }
+    if(p&&p.then){ p.then(off).catch(function(){}); } else off();
   }
-  a.addEventListener('play',function(){ set(K,'1'); ui(true); });
-  a.addEventListener('pause',function(){ if(!leaving){ set(K,'0'); ui(false); } });
-  function save(){ if(!a.paused) set(T,String(a.currentTime)); }
-  setInterval(save,1000);
-  addEventListener('pagehide',function(){ leaving=true; save(); });
-  function resume(){
-    leaving=false;
-    if(get(K)==='1' && a.paused){
-      start().catch(function(){
-        /* browser ne block kiya: pehle tap/key par shuru kar do */
-        var go=function(){ removeEventListener('pointerdown',go); removeEventListener('keydown',go); removeEventListener('touchend',go); if(get(K)==='1') start().catch(function(){}); };
-        addEventListener('pointerdown',go); addEventListener('keydown',go); addEventListener('touchend',go);
-      });
-    }
-  }
-  resume();
-  addEventListener('pageshow',function(e){ if(e.persisted) resume(); });
-  /* Welcome page: "Enter My Heart" tap = pehla user gesture, music yahin se start */
-  var enter=document.getElementById('enter');
-  if(enter){ enter.addEventListener('click',function(){ if(get(K)!=='0'){ set(K,'1'); start().catch(function(){}); } }); }
+  arm();                       /* pehla click/tap/key kahin bhi = song shuru */
+  tryPlay();                   /* agar browser allow kare to page khulte hi */
+  addEventListener('pageshow',function(e){ if(e.persisted){ arm(); tryPlay(); } });
+  setInterval(function(){ if(!a.paused) set(T,String(a.currentTime)); },1000);
+  addEventListener('pagehide',function(){ if(!a.paused) set(T,String(a.currentTime)); });
 })();
 </script>
 </body>
